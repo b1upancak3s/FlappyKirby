@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxwoakctr0kgn"]
+
+[ext_resource type="Texture2D" uid="uid://qvpdp3n8hcy0" path="res://sprites/Grassland Tiles/Assets/Background_1.png" id="1_3btox"]
+
+[node name="MovingSky" type="Node2D"]
+scale = Vector2(3.03216, 3.03216)
+
+[node name="Background1" type="Sprite2D" parent="."]
+position = Vector2(248, 136)
+texture = ExtResource("1_3btox")
+
+[node name="Background2" type="Sprite2D" parent="."]
+position = Vector2(744, 136)
+texture = ExtResource("1_3btox")

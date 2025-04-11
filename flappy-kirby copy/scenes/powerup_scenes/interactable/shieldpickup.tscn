@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://b1qw2q1w5dvsv"]
+
+[ext_resource type="Script" path="res://scripts/shieldpickup.gd" id="1_j6cd1"]
+[ext_resource type="Texture2D" uid="uid://divbxf205gea3" path="res://sprites/Grassland Tiles/Assets/Food and Powerups/Food.png" id="2_2aeeh"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_mdl5j"]
+radius = 72.4431
+
+[node name="Bubble" type="Area2D"]
+scale = Vector2(0.735817, 0.735817)
+monitorable = false
+script = ExtResource("1_j6cd1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(8.8611, 8.8611)
+texture = ExtResource("2_2aeeh")
+hframes = 8
+vframes = 8
+frame = 32
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_mdl5j")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="s_activate" from="." to="." method="_on_s_activate"]

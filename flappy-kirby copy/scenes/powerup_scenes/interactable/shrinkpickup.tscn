@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://dc5p7aq7e3ror"]
+
+[ext_resource type="Texture2D" uid="uid://divbxf205gea3" path="res://sprites/Grassland Tiles/Assets/Food and Powerups/Food.png" id="1_ad0mj"]
+[ext_resource type="Script" path="res://scenes/powerup_scenes/interactable/shrinkpickup.gd" id="1_vde5p"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jqpab"]
+radius = 7.80232
+
+[node name="shrinkpickup" type="Area2D"]
+scale = Vector2(6.15202, 6.15202)
+script = ExtResource("1_vde5p")
+
+[node name="Food" type="Sprite2D" parent="."]
+texture = ExtResource("1_ad0mj")
+hframes = 8
+vframes = 8
+frame = 7
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_jqpab")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="visibility" from="." to="." method="_on_visibility"]

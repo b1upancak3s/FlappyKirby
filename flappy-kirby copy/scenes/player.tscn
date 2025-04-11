@@ -1,0 +1,378 @@
+[gd_scene load_steps=12 format=3 uid="uid://n61uuyebj800"]
+
+[ext_resource type="Texture2D" uid="uid://on57l003s5jl" path="res://sprites/Grassland Tiles/Assets/Kirby Stuff/KirbyCropped (1).png" id="1_w30qr"]
+[ext_resource type="Texture2D" uid="uid://tmypvjrq42rr" path="res://sprites/Grassland Tiles/Assets/Food and Powerups/Powerup/bubble-ezgif.com-gif-maker.png" id="3_xw2en"]
+
+[sub_resource type="GDScript" id="GDScript_0py8g"]
+script/source = "extends CharacterBody2D
+
+@onready var timer = $PowerTimer
+@onready var shield = $Bubble
+@onready var shieldanim = $BubbleAnim
+@onready var shieldhitbox = $BubbleHitbox
+
+const GRAVITY : int = 1200
+const MAX_VEL : int = 1000
+const FLAP_SPEED : int = -600
+var flying : bool = false
+var falling : bool = false
+var current_ability : String
+const START_POS = Vector2(200, 400)
+var powerup : String
+#const DEFAULT_SCALE_KIRBY : Vector2 = get_node(\"Kirby\").scale
+#const DEFAULT_SCALE_HITBOX : Vector2 = get_node(\"PlayerHitbox\").scale
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	reset()
+
+func reset():
+	falling = false
+	flying = false
+	position = START_POS
+	set_rotation(0)
+	shield.visible = false
+	
+
+	# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _physics_process(delta):
+	if flying or falling:
+		velocity.y += GRAVITY * delta
+		#terminal velocity
+		if velocity.y > MAX_VEL:
+			velocity.y = MAX_VEL
+		if flying:
+			set_rotation(deg_to_rad(velocity.y * 0.05))
+			#$AnimatedSprite2D.play()
+		elif falling:
+			set_rotation(-PI/2)
+			#$AnimatedSprite2D.stop()
+		move_and_collide(velocity * delta)
+		if !timer.is_stopped():
+			return
+
+func flap():
+	velocity.y = FLAP_SPEED
+
+func flapkirbyflap():
+	$AnimationPlayer.play(\"flap\")
+
+#handles activation of powerups from the game manager
+func activate(signalpowerup : String):
+	powerup = signalpowerup
+	print(\"activate signal thing works\")
+	#If player hits powerup, then activate shield + its accessories
+	if powerup == \"shield\":
+		print(\"POWERUP STAARRTTT\")
+		add_to_group(\"shield\")
+		timer.start()
+		shield.visible = true
+		shieldanim.play(\"activate\")
+		shieldhitbox.set_deferred(\"disabled\", false)
+	if powerup == \"shrink\":
+		print(\"SMOL BOI\")
+		timer.start()
+		$Kirby.scale = Vector2(0.8, 0.8)
+		$PlayerHitbox.scale = Vector2(0.8, 0.8)
+		
+
+#shield will disappear if timer ends
+func _on_power_timer_timeout():
+	if powerup == \"shield\":
+		powerup = \"neutral\"
+		disable_shield()
+	elif powerup == \"shrink\": 
+		powerup = \"neutral\"
+		$Kirby.scale = Vector2(1.5, 1.5)
+		$PlayerHitbox.scale = Vector2(1.5,1.5)
+		print(\"BUFFY KIRBY MOMENT\")
+	$DelayTimer.start() 
+		
+
+func disable_shield():
+	shield.visible = false
+	shieldanim.stop()
+	shieldhitbox.set_deferred(\"disabled\", true)
+	$DelayTimer.start()
+	remove_from_group(\"shield\")
+	powerup = \"neutral\"
+
+func _on_delay_timer_timeout():
+	disable_shield()
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_e2wk8"]
+radius = 50.01
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_oir5u"]
+radius = 82.2109
+
+[sub_resource type="Animation" id="Animation_prdbg"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Kirby:hframes")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [12]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Kirby:vframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [12]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Kirby:texture")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("1_w30qr")]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Kirby:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [72]
+}
+
+[sub_resource type="Animation" id="Animation_r8eog"]
+resource_name = "flap"
+length = 0.200005
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Kirby:hframes")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [12]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Kirby:vframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [12]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Kirby:texture")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("1_w30qr")]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Kirby:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.1, 0.15, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [72, 73, 74, 75, 76]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_kflgh"]
+_data = {
+"RESET": SubResource("Animation_prdbg"),
+"flap": SubResource("Animation_r8eog")
+}
+
+[sub_resource type="Animation" id="Animation_im5kb"]
+resource_name = "activate"
+length = 1.20001
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bubble:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("3_xw2en")]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bubble:hframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [8]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Bubble:vframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bubble:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 7]
+}
+
+[sub_resource type="Animation" id="Animation_7kcyf"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bubble:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("3_xw2en")]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bubble:hframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [8]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Bubble:vframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bubble:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1rxof"]
+_data = {
+"RESET": SubResource("Animation_7kcyf"),
+"activate": SubResource("Animation_im5kb")
+}
+
+[node name="CharacterBody2D" type="CharacterBody2D"]
+position = Vector2(1, 0)
+scale = Vector2(0.889252, 0.902712)
+script = SubResource("GDScript_0py8g")
+
+[node name="Kirby" type="Sprite2D" parent="."]
+position = Vector2(0, 1)
+scale = Vector2(1.3375, 1.3375)
+texture = ExtResource("1_w30qr")
+hframes = 12
+vframes = 12
+frame = 72
+
+[node name="Bubble" type="Sprite2D" parent="."]
+position = Vector2(-2.38419e-07, -4.76837e-07)
+scale = Vector2(0.22668, 0.22668)
+texture = ExtResource("3_xw2en")
+hframes = 8
+
+[node name="PlayerHitbox" type="CollisionShape2D" parent="."]
+position = Vector2(-1, 0)
+shape = SubResource("CircleShape2D_e2wk8")
+
+[node name="BubbleHitbox" type="CollisionShape2D" parent="."]
+position = Vector2(1.52588e-05, 0)
+scale = Vector2(1, 1)
+shape = SubResource("CircleShape2D_oir5u")
+disabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_kflgh")
+}
+
+[node name="BubbleAnim" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_1rxof")
+}
+
+[node name="DelayTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="PowerTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true
+
+[connection signal="timeout" from="DelayTimer" to="." method="_on_delay_timer_timeout"]
+[connection signal="timeout" from="PowerTimer" to="." method="_on_shield_timer_timeout"]

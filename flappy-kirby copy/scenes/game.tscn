@@ -1,0 +1,233 @@
+[gd_scene load_steps=7 format=3 uid="uid://bi3y5eiy7itfx"]
+
+[ext_resource type="Texture2D" uid="uid://ul0cyj1oba8v" path="res://sprites/Grassland Tiles/Assets/Background_2.png" id="1_uwih0"]
+[ext_resource type="PackedScene" uid="uid://n61uuyebj800" path="res://scenes/player.tscn" id="1_wtbkp"]
+[ext_resource type="PackedScene" uid="uid://dxwoakctr0kgn" path="res://scenes/moving_sky.tscn" id="2_ysi2y"]
+[ext_resource type="PackedScene" uid="uid://cacgmkrliqyjt" path="res://scenes/pipes.tscn" id="3_uc2nl"]
+[ext_resource type="PackedScene" uid="uid://krqqoouysslo" path="res://scenes/ground.tscn" id="4_nmnkw"]
+
+[sub_resource type="GDScript" id="GDScript_k0xxw"]
+script/source = "extends Node2D
+
+@export var pipe_scene = preload(\"res://scenes/pipes.tscn\")
+@export var shieldpickup_scene = preload(\"res://scenes/powerup_scenes/interactable/shieldpickup.tscn\")
+@export var shrinkpickup_scene = preload(\"res://scenes/powerup_scenes/interactable/shrinkpickup.tscn\")
+@onready var player = $Player
+
+var game_running : bool
+var game_end : bool 
+var scrolling : bool
+var score : int
+var scroll
+var scrollsky
+var ground_height : int
+var SCROLL_SPEED : float = 2.5
+var SCROLL_SPEED_SKY : float = 1
+var pipes : Array
+var PIPE_RANGE : int = 200
+var PIPE_DELAY : int = 100
+var screen_size : Vector2i
+var power_ups : Array
+#size of movingsky
+var sky_size 
+var ground_size
+var rng = RandomNumberGenerator.new()
+var new_powerup
+
+signal poweredup
+
+func _ready():
+	screen_size = get_window().size
+	game_start()
+
+func game_start():
+	game_running = true
+	game_end = false
+	scrolling = true
+	$Player.flying = true
+	$Player.flap()
+	scroll = 0
+	scrollsky = 0
+	score = 0
+	$PipeTimer.start()
+	$PowerTimer.start()
+	sky_size = $MovingSky/Background1.texture.get_size().x * 5.290322581
+	print(sky_size)
+	ground_size = 304 * 4.276315789 #size multiplier for the sprites
+	print(ground_size)
+	#add pipes so that they generate earlier
+	add_pipes()
+
+func _input(event):
+	if game_running == true:
+		if event.is_action_pressed(\"jump\"):
+			if player.flying:
+				player.flap()
+				player.flapkirbyflap()
+		if event.is_action_pressed(\"reset\"):
+			player.reset()
+			game_start()
+
+func _process(delta):
+	if scrolling:
+		scroll += SCROLL_SPEED
+		scrollsky += SCROLL_SPEED_SKY
+	else:
+		scroll = 0
+		scrollsky = 0
+	if game_running:
+		#reset scroll
+		if scroll >= screen_size.x:
+			scroll = 0
+		#move ground node
+		$Ground.position.x = -scroll
+		#moving for the sky
+		if scrollsky >= sky_size:
+			scrollsky = 0
+		$MovingSky.position.x = -scrollsky
+		#move pipes
+		for pipe in pipes:
+			pipe.position.x -= SCROLL_SPEED
+			#remove pipes after leaving the screen
+			if pipe.position.x < -250:
+				pipes.remove_at(0)
+				remove_child(pipe)
+		#move powerup
+		for orb in power_ups:
+			if not orb or not is_instance_valid(orb):
+				return
+			orb.position.x -= SCROLL_SPEED
+			#remove pipes after leaving the screen
+			if orb.position.x < -250:
+				power_ups.remove_at(0)
+				remove_child(orb)
+		if game_end:
+			player.velocity.y = 0
+	else:
+		scrolling = false
+
+
+func add_pipes():
+	#adding new pipes to the scene
+	var pipe = pipe_scene.instantiate()
+	pipe.position.x = screen_size.x + PIPE_DELAY
+	pipe.position.y = (screen_size.y - ground_height) / 2  + randi_range(-PIPE_RANGE, PIPE_RANGE)
+	pipe.pipehit.connect(hit)
+	pipe.score.connect(scoring)
+	add_child(pipe)
+	pipes.append(pipe)
+	
+	
+func add_powerups():
+	var random = rng.randi_range(0, 100)
+	#chooses which powerup to spawn based on rng
+	if random % 2 == 0:
+		new_powerup = shieldpickup_scene.instantiate()
+		new_powerup.shieldhit.connect(shieldactivate)
+	elif random % 2 == 1:
+		new_powerup = shrinkpickup_scene.instantiate()
+		new_powerup.shrinkhit.connect(shrinkactivate)
+	add_child(new_powerup)
+	power_ups.append(new_powerup)
+	new_powerup.position.x = screen_size.x + 60
+	new_powerup.position.y = randi_range(256, 1024)
+	
+func end_game():
+	game_running = false
+	$PipeTimer.stop()
+	$PowerTimer.stop()
+
+func _on_pipe_timer_timeout():
+	add_pipes()
+
+func _on_power_timer_timeout():
+	add_powerups()
+	
+func hit():
+	if player.position.y < 1256:
+		player.velocity.y = -80
+	else:
+		player.velocity.y = 0
+	game_end = true
+	end_game()
+
+func check_top():
+	if player.position.y < 0:
+		player.velocity.y = 0
+
+func _on_ground_groundhit():
+	game_end = true
+	end_game()
+
+func scoring():
+	score += 1
+	$Score.text = \"Score: \" + str(score)
+
+func shieldactivate():
+	player.activate(\"shield\")
+	print(\"player hit shield apple thing\")
+
+func shrinkactivate():
+	player.activate(\"shrink\")
+	print(\"another player has hit the second shrink thingy\")
+"
+
+[node name="Game" type="Node2D"]
+script = SubResource("GDScript_k0xxw")
+
+[node name="Sky" type="Sprite2D" parent="."]
+position = Vector2(904, 688)
+scale = Vector2(5.73235, 5.21881)
+texture = ExtResource("1_uwih0")
+
+[node name="MovingSky" parent="." instance=ExtResource("2_ysi2y")]
+texture_filter = 1
+position = Vector2(0, -16)
+scale = Vector2(5.29036, 5.29036)
+
+[node name="Score" type="Label" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 560.0
+offset_top = 120.0
+offset_right = 748.0
+offset_bottom = 189.0
+grow_horizontal = 0
+grow_vertical = 0
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 50
+text = "Score: 0"
+
+[node name="Player" parent="." instance=ExtResource("1_wtbkp")]
+position = Vector2(-109, 480)
+scale = Vector2(0.892288, 0.892288)
+
+[node name="Ground" parent="." instance=ExtResource("4_nmnkw")]
+position = Vector2(0, 1208)
+scale = Vector2(4.2762, 4.2762)
+
+[node name="Pipes" parent="." instance=ExtResource("3_uc2nl")]
+visible = false
+position = Vector2(-792, 248)
+scale = Vector2(0.529089, 0.529089)
+
+[node name="PipeTimer" type="Timer" parent="."]
+wait_time = 3.0
+
+[node name="PowerTimer" type="Timer" parent="."]
+wait_time = 6.0
+
+[node name="SpeedTimer" type="Timer" parent="."]
+wait_time = 9.0
+one_shot = true
+
+[connection signal="groundhit" from="Ground" to="." method="_on_ground_groundhit"]
+[connection signal="pipehit" from="Pipes" to="." method="_on_pipes_pipehit"]
+[connection signal="score" from="Pipes" to="." method="_on_pipes_score"]
+[connection signal="timeout" from="PipeTimer" to="." method="_on_pipe_timer_timeout"]
+[connection signal="timeout" from="PowerTimer" to="." method="_on_power_timer_timeout"]
+[connection signal="timeout" from="SpeedTimer" to="." method="_on_speed_timer_timeout"]
